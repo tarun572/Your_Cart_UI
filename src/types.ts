@@ -28,6 +28,13 @@ export interface ApiKeyResult {
   valid: boolean;
 }
 
+export interface LoginResult {
+  valid: boolean;
+  token: string;
+  user_key?: string;
+  message?: string;
+}
+
 export interface SellerRegistration {
   fullName: string;
   email: string;

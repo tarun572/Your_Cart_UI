@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { Box, Text } from 'grommet';
 import { useAuth } from '../App';
 import AppHeader from '../components/AppHeader';
-import * as mockApi from '../mockApi';
+import { loginUser } from '../api';
+import { authActions } from '../store';
 import type { User } from '../types';
+import type { AppDispatch } from '../store';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -14,6 +17,7 @@ function Spinner() {
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const dispatch = useDispatch() as unknown as AppDispatch;
   const navigate = useNavigate();
 
   const [email, setEmail]   = useState('');
@@ -36,24 +40,89 @@ export default function LoginPage() {
     if (!role) { alert('Please select a role.'); return; }
 
     if (role === 'seller') {
-      if (!apiKey.trim()) { setKeyErr('API key is required to access the Seller portal.'); return; }
-      setLoading(true);
-      setKeyErr('');
-      try {
-        const { valid } = await mockApi.validateSellerKey(apiKey);
-        if (!valid) { setKeyErr('Invalid API key. Access denied.'); setLoading(false); return; }
-      } catch {
-        setKeyErr('Verification failed. Please try again.');
-        setLoading(false);
-        return;
+      if (!apiKey.trim()) { 
+        setKeyErr('API key is required to access the Seller portal.'); 
+        return; 
       }
-      setLoading(false);
     }
 
-    const name = email.split('@')[0].replace(/[._-]/g, ' ');
-    const user: User = { email, name, role, ...(role === 'seller' ? { apiKey } : {}) };
-    login(user);
-    navigate('/shop');
+    // Set loading state in Redux
+    dispatch(authActions.setLoading(true));
+    setLoading(true);
+    setKeyErr('');
+    setEmailErr('');
+
+    try {
+      // Call login API from api.ts
+      const loginResult = await loginUser(
+        email,
+        role,
+        role === 'seller' ? apiKey : undefined
+      );
+
+      console.log('Full Login Result:', loginResult);
+      console.log('Status Code:', loginResult.statusCode);
+
+      // Check if response status is 200
+      if (loginResult.statusCode === 200) {
+        // API returns data as an array, extract from data[0]
+        const userData = (loginResult as any).data?.[0];
+        
+        if (!userData) {
+          setKeyErr('Invalid API response structure');
+          dispatch(authActions.setError('Invalid response from server'));
+          setLoading(false);
+          dispatch(authActions.setLoading(false));
+          return;
+        }
+
+        const token = userData.token || '';
+        console.log('Token extracted:', token);
+        
+        if (!token) {
+          console.warn('⚠️ WARNING: Token not found in API response!');
+        }
+        
+        const name = userData.user_name || email.split('@')[0].replace(/[._-]/g, ' ');
+        const user: User = { 
+          email: userData.user_email || email, 
+          name, 
+          role: userData.user_role || role, 
+          ...(role === 'seller' ? { apiKey } : {}) 
+        };
+
+        // Dispatch user, token, user_key, and status code to Redux store
+        dispatch(authActions.setUser({
+          user,
+          token: token,
+          userKey: userData.user_key,
+          statusCode: loginResult.statusCode,
+        }));
+
+        // Also call the context login for backward compatibility
+        login(user);
+
+        // Navigate to shop on successful login (status 200)
+        console.log('Login successful! Redirecting to /shop');
+        navigate('/shop');
+      } else {
+        // Response status is not 200
+        const errorMsg = loginResult.message || `Login failed with status ${loginResult.statusCode}. Please try again.`;
+        setKeyErr(errorMsg);
+        dispatch(authActions.setError(errorMsg));
+        dispatch(authActions.setStatusCode(loginResult.statusCode || 400));
+        setLoading(false);
+        dispatch(authActions.setLoading(false));
+        console.log('API Error - Status:', loginResult.statusCode);
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Login verification failed. Please try again.';
+      setKeyErr(errorMsg);
+      dispatch(authActions.setError(errorMsg));
+      console.error('Login error:', error);
+      setLoading(false);
+      dispatch(authActions.setLoading(false));
+    }
   }
 
   return (
