@@ -1,6 +1,8 @@
 ﻿import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Provider } from 'react-redux';
 import { Grommet } from 'grommet';
+import { store } from './store';
 import type { User } from './types';
 import type { CartItem } from './types';
 import LoginPage from './pages/LoginPage.tsx';
@@ -92,20 +94,22 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
 
 export default function App() {
   return (
-    <Grommet theme={grommetTheme} full>
-      <BrowserRouter>
-        <AuthProvider>
-          <CartProvider>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register-seller" element={<RegisterSellerPage />} />
-              <Route path="/shop" element={<ProtectedRoute><ShopPage /></ProtectedRoute>} />
-              <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
-              <Route path="*" element={<Navigate to="/login" replace />} />
-            </Routes>
-          </CartProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </Grommet>
+    <Provider store={store}>
+      <Grommet theme={grommetTheme} full>
+        <BrowserRouter>
+          <AuthProvider>
+            <CartProvider>
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register-seller" element={<RegisterSellerPage />} />
+                <Route path="/shop" element={<ProtectedRoute><ShopPage /></ProtectedRoute>} />
+                <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
+                <Route path="*" element={<Navigate to="/login" replace />} />
+              </Routes>
+            </CartProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </Grommet>
+    </Provider>
   );
 }
