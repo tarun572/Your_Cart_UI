@@ -4,7 +4,7 @@
  */
 
 import { configureStore, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import type { User } from './types';
+import type { User, Product } from './types';
 
 /**
  * Auth Slice - Manages user authentication state
@@ -178,12 +178,64 @@ export const cartSlice = createSlice({
 });
 
 /**
+ * Products Slice - Manages products state
+ */
+interface ProductsState {
+  items: Product[];
+  loading: boolean;
+  error: string | null;
+}
+
+const initialProductsState: ProductsState = {
+  items: [],
+  loading: false,
+  error: null,
+};
+
+export const productsSlice = createSlice({
+  name: 'products',
+  initialState: initialProductsState,
+  reducers: {
+    // Set all products
+    setProducts: (state, action: PayloadAction<Product[]>) => {
+      state.items = action.payload;
+      state.error = null;
+    },
+    // Add a new product
+    addProduct: (state, action: PayloadAction<Product>) => {
+      state.items.push(action.payload);
+    },
+    // Update an existing product
+    updateProduct: (state, action: PayloadAction<Product>) => {
+      const index = state.items.findIndex((p: Product) => p.id === action.payload.id);
+      if (index !== -1) {
+        state.items[index] = action.payload;
+      }
+    },
+    // Remove a product
+    removeProduct: (state, action: PayloadAction<number>) => {
+      state.items = state.items.filter((p: Product) => p.id !== action.payload);
+    },
+    // Set loading state
+    setProductsLoading: (state, action: PayloadAction<boolean>) => {
+      state.loading = action.payload;
+    },
+    // Set error
+    setProductsError: (state, action: PayloadAction<string | null>) => {
+      state.error = action.payload;
+      state.loading = false;
+    },
+  },
+});
+
+/**
  * Configure Redux Store
  */
 export const store = configureStore({
   reducer: {
     auth: authSlice.reducer,
     cart: cartSlice.reducer,
+    products: productsSlice.reducer,
   },
 });
 
@@ -193,3 +245,4 @@ export type AppDispatch = typeof store.dispatch;
 // Export actions
 export const authActions = authSlice.actions;
 export const cartActions = cartSlice.actions;
+export const productsActions = productsSlice.actions;

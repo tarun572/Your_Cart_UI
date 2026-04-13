@@ -5,6 +5,8 @@ export interface Product {
   category: string;
   /** base64 data URL (local upload) or https URL */
   image: string;
+  /** Array of image URLs for product gallery */
+  images?: string[];
   desc: string;
   stock: number;
   seller: string;
@@ -38,9 +40,7 @@ export interface LoginResult {
 export interface SellerRegistration {
   fullName: string;
   email: string;
-  businessName: string;
-  phone: string;
-  password: string;
+  userRole: 'seller',
 }
 
 export interface SellerRegistrationResult {
