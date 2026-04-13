@@ -1,5 +1,6 @@
-import { useState, useCallback, useEffect, useRef, ChangeEvent } from 'react';
+import { useState, useCallback, useEffect, useRef, ChangeEvent, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   Box, Text, Button, Image, Layer, Meter,
 } from 'grommet';
@@ -7,7 +8,10 @@ import { Close, Cart, Tag as TagIcon } from 'grommet-icons';
 import { useAuth, useCart } from '../App';
 import AppHeader from '../components/AppHeader';
 import * as mockApi from '../mockApi';
+import * as api from '../api';
 import type { Product, User } from '../types';
+import type { RootState, AppDispatch } from '../store';
+import { productsActions } from '../store';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const PLACEHOLDER = 'https://placehold.co/400x300/e0e7ff/4f46e5?text=Product';
@@ -43,23 +47,33 @@ interface ProductDetailLayerProps {
 function ProductDetailLayer({
   product, user, onClose, onAddToCart, onEdit, onDelete, deleting,
 }: ProductDetailLayerProps) {
-  const isMySelling = user.role === 'seller' && product.sellerApiKey === user.apiKey;
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const isMySelling = user.role === 'seller' && product.seller === user.email;
   const stockPct = Math.min(product.stock, 100);
-
+  
+  // Get all images - combine main image and additional images
+  const allImages = product.images && product.images.length > 0 
+    ? product.images 
+    : [product.image || PLACEHOLDER];
+  
+  const currentImage = allImages[selectedImageIndex] || PLACEHOLDER;
+console.log("333333:", product);
   return (
     <Layer onEsc={onClose} onClickOutside={onClose} modal position="center" animation="fadeIn">
       <Box width={{ max: '640px', min: '320px' }} round="small" overflow="hidden" elevation="large">
-        {/* Image header */}
+        {/* Image gallery header */}
         <Box height="260px" background="light-2" style={{ position: 'relative' }}>
           <Image
-            src={product.image || PLACEHOLDER}
-            alt={product.name}
+            src={currentImage}
+            alt={`${product.name} - Image ${selectedImageIndex + 1}`}
             fit="cover"
             fill
             onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
               (e.target as HTMLImageElement).src = PLACEHOLDER;
             }}
           />
+          
+          {/* Close button */}
           <Box style={{ position: 'absolute', top: 12, right: 12 }}>
             <Button
               icon={<Close size="small" />}
@@ -71,12 +85,98 @@ function ProductDetailLayer({
               }}
             />
           </Box>
+          
+          {/* Category badge */}
           <Box style={{ position: 'absolute', bottom: 12, left: 12 }}>
             <Box pad={{ horizontal: 'small', vertical: 'xsmall' }} background="#4f46e5" round="full">
               <Text size="xsmall" weight="bold" color="white">{product.category}</Text>
             </Box>
           </Box>
+
+          {/* Image counter */}
+          {allImages.length > 1 && (
+            <Box style={{ position: 'absolute', bottom: 12, right: 12 }}>
+              <Box pad={{ horizontal: 'small', vertical: 'xsmall' }} background="rgba(0,0,0,0.7)" round="full">
+                <Text size="xsmall" weight="bold" color="white">
+                  {selectedImageIndex + 1} / {allImages.length}
+                </Text>
+              </Box>
+            </Box>
+          )}
+
+          {/* Previous button */}
+          {allImages.length > 1 && (
+            <Box
+              style={{
+                position: 'absolute',
+                left: 12,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                cursor: 'pointer',
+              }}
+              onClick={() => setSelectedImageIndex(prev => (prev - 1 + allImages.length) % allImages.length)}
+              pad="small"
+              background="rgba(0,0,0,0.5)"
+              round="full"
+            >
+              <Text weight="bold" color="white" style={{ fontSize: '18px' }}>‹</Text>
+            </Box>
+          )}
+
+          {/* Next button */}
+          {allImages.length > 1 && (
+            <Box
+              style={{
+                position: 'absolute',
+                right: 12,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                cursor: 'pointer',
+              }}
+              onClick={() => setSelectedImageIndex(prev => (prev + 1) % allImages.length)}
+              pad="small"
+              background="rgba(0,0,0,0.5)"
+              round="full"
+            >
+              <Text weight="bold" color="white" style={{ fontSize: '18px' }}>›</Text>
+            </Box>
+          )}
         </Box>
+
+        {/* Thumbnail carousel (if multiple images) */}
+        {allImages.length > 1 && (
+          <Box
+            direction="row"
+            overflow={{ horizontal: 'auto' }}
+            gap="xsmall"
+            pad="small"
+            background="#f8f9fa"
+            style={{ scrollBehavior: 'smooth' }}
+          >
+            {allImages.map((img, index) => (
+              <Box
+                key={index}
+                height="60px"
+                width="60px"
+                onClick={() => setSelectedImageIndex(index)}
+                style={{
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                  border: selectedImageIndex === index ? '3px solid #4f46e5' : '2px solid #ddd',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                }}
+              >
+                <img
+                  src={img}
+                  alt={`Thumbnail ${index + 1}`}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={e => { (e.target as HTMLImageElement).src = PLACEHOLDER; }}
+                />
+              </Box>
+            ))}
+          </Box>
+        )}
 
         {/* Body */}
         <Box pad="medium" gap="small" background="white">
@@ -151,21 +251,36 @@ function ProductDetailLayer({
 interface ProductModalProps {
   editProduct: Product | null;
   onClose: () => void;
-  onSubmit: (form: Omit<Product, 'id' | 'seller' | 'sellerApiKey'>) => Promise<void>;
+  onSubmit: (form: {
+    name: string;
+    price: number;
+    category: string;
+    desc: string;
+    stock: number;
+    image: File | string;
+    images?: (File | string)[]; // Multiple images
+    apiKey: string;
+  }) => Promise<void>;
 }
 
 function ProductModal({ editProduct, onClose, onSubmit }: ProductModalProps) {
   const [form, setForm] = useState({
-    name:     editProduct?.name     ?? '',
-    price:    editProduct?.price?.toString()  ?? '',
+    name: editProduct?.name ?? '',
+    price: editProduct?.price?.toString() ?? '',
     category: editProduct?.category ?? '',
-    image:    editProduct?.image    ?? '',
-    desc:     editProduct?.desc     ?? '',
-    stock:    editProduct?.stock?.toString()  ?? '',
+    desc: editProduct?.desc ?? '',
+    stock: editProduct?.stock?.toString() ?? '',
+    apiKey: '',
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState(editProduct?.image ?? '');
-  const [submitting, setSubmitting]     = useState(false);
+  const [additionalImages, setAdditionalImages] = useState<(File | string)[]>(editProduct?.images ?? []);
+  const [additionalPreviews, setAdditionalPreviews] = useState<string[]>(
+    editProduct?.images?.filter(img => typeof img === 'string') ?? []
+  );
+  const [submitting, setSubmitting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const multiFileRef = useRef<HTMLInputElement>(null);
 
   function set<K extends keyof typeof form>(field: K, value: string) {
     setForm(f => ({ ...f, [field]: value }));
@@ -174,27 +289,70 @@ function ProductModal({ editProduct, onClose, onSubmit }: ProductModalProps) {
   function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Store the file for upload
+    setImageFile(file);
+
+    // Create preview for display
     const reader = new FileReader();
     reader.onload = ev => {
       const result = ev.target?.result as string;
-      set('image', result);
       setImagePreview(result);
     };
     reader.readAsDataURL(file);
   }
 
+  function handleMultipleFilesChange(e: ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newImages: (File | string)[] = [...additionalImages];
+    const newPreviews: string[] = [...additionalPreviews];
+
+    Array.from(files).forEach(file => {
+      newImages.push(file);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const result = ev.target?.result as string;
+        newPreviews.push(result);
+        setAdditionalPreviews([...newPreviews]);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    setAdditionalImages(newImages);
+  }
+
+  function removeAdditionalImage(index: number) {
+    setAdditionalImages(prev => prev.filter((_, i) => i !== index));
+    setAdditionalPreviews(prev => prev.filter((_, i) => i !== index));
+  }
+
   async function handleSubmit() {
-    if (!form.name.trim() || !form.price || !form.category || !form.stock) {
-      alert('Please fill all required fields (Name, Price, Category, Stock).');
+    if (!form.name.trim() || !form.price || !form.category || !form.stock || !form.apiKey.trim()) {
+      alert('Please fill all required fields (Name, Price, Category, Stock, Seller Key).');
+      return;
+    }
+    if (!imageFile && !imagePreview && !editProduct) {
+      alert('Please upload a product image.');
       return;
     }
     setSubmitting(true);
     try {
-      await onSubmit({
-        name: form.name.trim(), price: parseFloat(form.price),
-        category: form.category, image: form.image,
-        desc: form.desc, stock: parseInt(form.stock, 10),
-      });
+      const imageData: File | string = imageFile || imagePreview || '';
+      const submitForm = {
+        name: form.name.trim(),
+        price: parseFloat(form.price),
+        category: form.category,
+        image: imageData,
+        images: additionalImages.length > 0 ? additionalImages : undefined, // Include additional images
+        desc: form.desc,
+        stock: parseInt(form.stock, 10),
+        apiKey: form.apiKey.trim(),
+      };
+      await onSubmit(submitForm);
     } finally {
       setSubmitting(false);
     }
@@ -238,6 +396,12 @@ function ProductModal({ editProduct, onClose, onSubmit }: ProductModalProps) {
           </Box>
 
           <Box className="form-group" tag="div">
+            <label>Seller Key (API Key) *</label>
+            <input type="text" placeholder="Enter your seller API key"
+              value={form.apiKey} onChange={e => set('apiKey', e.target.value)} />
+          </Box>
+
+          <Box className="form-group" tag="div">
             <label>Description</label>
             <textarea placeholder="Brief description…" value={form.desc}
               onChange={e => set('desc', e.target.value)} />
@@ -250,7 +414,7 @@ function ProductModal({ editProduct, onClose, onSubmit }: ProductModalProps) {
                 <Box className="image-preview" tag="div">
                   <img src={imagePreview} alt="Preview" />
                   <button type="button" className="btn-remove-img"
-                    onClick={() => { set('image', ''); setImagePreview(''); }}>
+                    onClick={() => { setImageFile(null); setImagePreview(''); }}>
                     ✕ Remove
                   </button>
                 </Box>
@@ -269,6 +433,64 @@ function ProductModal({ editProduct, onClose, onSubmit }: ProductModalProps) {
                   Change Image
                 </button>
               )}
+            </Box>
+          </Box>
+
+          <Box className="form-group" tag="div">
+            <label>Additional Product Images (Gallery)</label>
+            <Box className="image-upload-area" tag="div">
+              {additionalPreviews.length > 0 ? (
+                <Box tag="div" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '8px' }}>
+                  {additionalPreviews.map((preview, idx) => (
+                    <Box key={idx} style={{ position: 'relative' }}>
+                      <img src={preview} alt={`Additional ${idx + 1}`} style={{ 
+                        width: '100%', 
+                        height: '80px', 
+                        objectFit: 'cover',
+                        borderRadius: '8px',
+                        border: '1px solid #ddd'
+                      }} />
+                      <button type="button" onClick={() => removeAdditionalImage(idx)} style={{
+                        position: 'absolute',
+                        top: '-8px',
+                        right: '-8px',
+                        background: '#ef4444',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '24px',
+                        height: '24px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>✕</button>
+                    </Box>
+                  ))}
+                  <Box onClick={() => multiFileRef.current?.click()} style={{
+                    width: '100%',
+                    height: '80px',
+                    border: '2px dashed #4f46e5',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    background: '#f3f4f6'
+                  }}>
+                    <Text size="2xl" style={{ color: '#4f46e5' }}>+</Text>
+                  </Box>
+                </Box>
+              ) : (
+                <Box onClick={() => multiFileRef.current?.click()} className="image-placeholder" tag="div">
+                  <Text size="3xl">🖼️</Text>
+                  <Text weight="bold" size="small">Click to add more images</Text>
+                  <Text size="xsmall" color="#64748b">Make your product stand out with multiple photos</Text>
+                </Box>
+              )}
+              <input ref={multiFileRef} type="file" accept="image/*" multiple
+                style={{ display: 'none' }} onChange={handleMultipleFilesChange} />
             </Box>
           </Box>
         </Box>
@@ -354,23 +576,38 @@ export default function ShopPage() {
   const { cart, setCart } = useCart();
   const navigate = useNavigate();
 
-  const [products, setProducts]           = useState<Product[]>([]);
-  const [productsLoading, setLoading]     = useState(false);
-  const [modalOpen, setModalOpen]         = useState(false);
-  const [editingId, setEditingId]         = useState<number | null>(null);
-  const [toast, setToast]                 = useState('');
-  const [deletingId, setDeletingId]       = useState<number | null>(null);
+  // Redux hooks
+  const dispatch = useDispatch<AppDispatch>();
+  const { items: products, loading: productsLoading } = useSelector(
+    (state: RootState) => state.products
+  );
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [toast, setToast] = useState('');
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [detailProduct, setDetailProduct] = useState<Product | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    const fetch = (user.role === 'seller' && user.apiKey)
-      ? mockApi.getProductsByApiKey(user.apiKey)
-      : mockApi.getProducts();
-    fetch
-      .then(data => { setProducts(data); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, [user.role, user.apiKey]);
+    dispatch(productsActions.setProductsLoading(true));
+    const userEmail = user.email || '';
+    
+    console.log('📍 useEffect triggered, fetching products for email:', userEmail);
+    
+    // Fetch products using real API with user email
+    api.getProductsByEmail(userEmail)
+      .then(data => {
+        console.log('✅ Products fetched from API:', data);
+        console.log('📊 Total products:', data.length);
+        dispatch(productsActions.setProducts(data));
+        dispatch(productsActions.setProductsLoading(false));
+      })
+      .catch((error) => {
+        console.error('❌ Error loading products:', error);
+        dispatch(productsActions.setProductsError(error instanceof Error ? error.message : 'Failed to load products'));
+        dispatch(productsActions.setProductsLoading(false));
+      });
+  }, [user.email, dispatch]);
 
   function showToast(msg: string) {
     setToast(msg);
@@ -382,27 +619,186 @@ export default function ShopPage() {
   function openProductModal(id: number | null = null) { setEditingId(id); setModalOpen(true); }
   function closeProductModal() { setModalOpen(false); setEditingId(null); }
 
-  async function handleSubmitProduct(form: Omit<Product, 'id' | 'seller' | 'sellerApiKey'>) {
-    if (editingId !== null) {
-      const updated = await mockApi.updateProduct(editingId, form);
-      setProducts(prev => prev.map(p => p.id === editingId ? updated : p));
-      showToast('Product updated!');
-    } else {
-      const created = await mockApi.createProduct({ ...form, seller: user.name, sellerApiKey: user.apiKey ?? '' });
-      // Sellers only see their own products, so always add to list
-      setProducts(prev => [...prev, created]);
-      showToast('Product added!');
+  async function handleSubmitProduct(form: {
+    name: string;
+    price: number;
+    category: string;
+    desc: string;
+    stock: number;
+    image: File | string;
+    apiKey: string;
+  }) {
+    try {
+      console.log('📋 handleSubmitProduct called with:', form);
+      console.log('🔍 editingId:', editingId, ', user.apiKey:', user.apiKey, ', user.email:', user.email);
+      
+      if (editingId !== null) {
+        console.log('✏️ Editing existing product:', editingId);
+        
+        const userKey: string = form.apiKey || user.apiKey || '';
+        const userEmail: string = user.email || '';
+        
+        if (!userKey || !userEmail) {
+          console.error('❌ Missing seller info for edit:', { userKey, userEmail });
+          showToast('Seller information is missing! Please provide seller key.');
+          return;
+        }
+
+        // Prepare product data for edit
+        const productData = {
+          name: form.name,
+          price: form.price,
+          category: form.category,
+          desc: form.desc,
+          stock: form.stock,
+          image: undefined as File | undefined,
+        };
+
+        // Handle image if it's a File object
+        if (typeof form.image === 'object' && form.image instanceof File) {
+          productData.image = form.image;
+        }
+
+        console.log('🔑 Using edit credentials:', { userKey: userKey.substring(0, 10) + '...', userEmail });
+        const response = await api.editProductApi(editingId, userEmail, userKey, productData);
+        
+        if (response.status === 'Success' || response.status === 'success') {
+          console.log('✅ Product edit success');
+          // Update the local product with new data
+          const updated: Product = {
+            id: editingId,
+            name: form.name,
+            price: form.price,
+            category: form.category,
+            desc: form.desc,
+            stock: form.stock,
+            image: form.image as string,
+            seller: user.email,
+            sellerApiKey: userKey,
+          };
+          dispatch(productsActions.updateProduct(updated));
+          showToast('✅ Product updated!');
+        } else {
+          console.error('❌ API returned error:', response.message);
+          showToast('❌ ' + (response.message || 'Failed to update product'));
+          return;
+        }
+      } else {
+        console.log('➕ Creating new product');
+        // Create new product using real API
+        
+        // Get user_key from form input (seller provides it)
+        const userKey: string = form.apiKey;
+        const userEmail: string = user.email || '';
+        
+        if (!userKey || !userEmail) {
+          console.error('❌ Missing seller info:', { userKey, userEmail });
+          showToast('Seller information is missing! Please check seller key and login again.');
+          return;
+        }
+
+        console.log('🔑 Using credentials from form:', { userKey: userKey.substring(0, 10) + '...', userEmail });
+        console.log('📦 Building FormData...');
+        const formData = new FormData();
+        formData.append('user_email', userEmail);
+        formData.append('user_key', userKey);
+        formData.append('name', form.name);
+        formData.append('price', form.price.toString());
+        formData.append('category', form.category);
+        formData.append('desc', form.desc || '');
+        formData.append('stock', form.stock.toString());
+
+        // Handle image upload
+        if (typeof form.image !== 'string') {
+          console.log('🖼️ Image is a File object:', form.image);
+          // It's a File object
+          formData.append('image', form.image);
+        } else if (form.image.startsWith('data:')) {
+          console.log('🖼️ Image is base64, converting to Blob...');
+          // Convert base64 to Blob
+          const base64Data = form.image.split(',')[1];
+          const byteCharacters = atob(base64Data);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: 'image/jpeg' });
+          formData.append('image', blob, 'product-image.jpg');
+        } else {
+          console.warn('⚠️ Image is neither File nor base64:', form.image);
+        }
+
+        console.log('🚀 Calling api.insertProduct with user_key header...');
+        console.log('📤 Request headers will include:', { user_key: userKey.substring(0, 10) + '...' });
+        const response = await api.insertProduct(formData, userKey, userEmail);
+        console.log('✅ API Response:', response);
+
+        // Check if API returned success
+        if (response.status !== 'Success' || !response.data) {
+          console.error('❌ API returned error:', response.message);
+          showToast(response.message || 'Failed to add product');
+          return;
+        }
+
+        console.log('🎉 Product created successfully, creating Redux entry...');
+        // Create product object from response
+        const created: Product = {
+          id: response.data.product_id || Date.now(),
+          name: response.data.name,
+          price: response.data.price,
+          category: response.data.category,
+          image: response.data.image,
+          desc: response.data.desc || '',
+          stock: response.data.stock,
+          seller: response.data.seller,
+          sellerApiKey: userKey,
+
+        };
+
+        dispatch(productsActions.addProduct(created));
+        showToast('Product added!');
+      }
+      closeProductModal();
+    } catch (error) {
+      console.error('❌ Error submitting product:', error);
+      showToast('Error saving product. Please try again.');
     }
-    closeProductModal();
   }
 
   async function handleDeleteProduct(id: number) {
     setDeletingId(id);
     try {
-      await mockApi.removeProduct(id);
-      setProducts(prev => prev.filter(p => p.id !== id));
-      setCart(prev => prev.filter(c => c.id !== id));
-      showToast('Product deleted!');
+      const product = products.find(p => p.id === id);
+      console.log("products @@@@@" , products);
+      if (!product) {
+        showToast('Product not found');
+        return;
+      }
+
+      const userKey = user.apiKey || '';
+      const userEmail = user.email || '';
+
+      if (!userKey || !userEmail) {
+        console.error('❌ Missing seller info for delete:', { userKey, userEmail });
+        showToast('Seller information is missing! Please login again.');
+        return;
+      }
+
+      console.log('🗑️ Deleting product:', product.name);
+      const response = await api.deleteProductApi(id, userEmail, userKey);
+      
+      if (response.status === 'Success' || response.status === 'success') {
+        console.log('✅ Product deleted via API');
+        dispatch(productsActions.removeProduct(id));
+        setCart(prev => prev.filter(c => c.id !== id));
+        showToast('✅ Product deleted!');
+      } else {
+        showToast('❌ ' + (response.message || 'Failed to delete product'));
+      }
+    } catch (error) {
+      console.error('❌ Error deleting product:', error);
+      showToast('Error deleting product. Please try again.');
     } finally {
       setDeletingId(null);
     }
@@ -423,13 +819,24 @@ export default function ShopPage() {
     });
   }, [products]);
 
-  const cartCount   = cart.reduce((sum, c) => sum + c.qty, 0);
+  const cartCount = cart.reduce((sum, c) => sum + c.qty, 0);
   const editProduct = editingId !== null ? products.find(p => p.id === editingId) ?? null : null;
 
-  // Buyers see all products; sellers see only their own listings (matched by API key)
-  const displayedProducts = (user.role === 'seller' && user.apiKey)
-    ? products.filter(p => p.sellerApiKey === user.apiKey)
-    : products;
+  // Buyers see all products; sellers see only their own listings (matched by seller email)
+  const displayedProducts = Array.isArray(products) 
+    ? (user.role === 'seller')
+      ? (products.filter(p => p.seller === user.email) || [])
+      : products
+    : [];
+
+  console.log('📋 Products state:', { 
+    isArray: Array.isArray(products),
+    totalProducts: Array.isArray(products) ? products.length : 0,
+    userRole: user.role,
+    userEmail: user.email,
+    displayedCount: displayedProducts.length,
+    displayedProducts,
+  });
 
   return (
     <Box fill direction="column" tag="div">
