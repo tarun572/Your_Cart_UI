@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, ChangeEvent, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -7,7 +7,6 @@ import {
 import { Close, Cart, Tag as TagIcon } from 'grommet-icons';
 import { useAuth, useCart } from '../App';
 import AppHeader from '../components/AppHeader';
-import * as mockApi from '../mockApi';
 import * as api from '../api';
 import type { Product, User } from '../types';
 import type { RootState, AppDispatch } from '../store';
@@ -250,6 +249,7 @@ console.log("333333:", product);
 // ── Product Form Modal ────────────────────────────────────────────────────────
 interface ProductModalProps {
   editProduct: Product | null;
+  user: User;
   onClose: () => void;
   onSubmit: (form: {
     name: string;
@@ -263,14 +263,13 @@ interface ProductModalProps {
   }) => Promise<void>;
 }
 
-function ProductModal({ editProduct, onClose, onSubmit }: ProductModalProps) {
+function ProductModal({ editProduct, user, onClose, onSubmit }: ProductModalProps) {
   const [form, setForm] = useState({
     name: editProduct?.name ?? '',
     price: editProduct?.price?.toString() ?? '',
     category: editProduct?.category ?? '',
     desc: editProduct?.desc ?? '',
     stock: editProduct?.stock?.toString() ?? '',
-    apiKey: '',
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState(editProduct?.image ?? '');
@@ -331,14 +330,21 @@ function ProductModal({ editProduct, onClose, onSubmit }: ProductModalProps) {
   }
 
   async function handleSubmit() {
-    if (!form.name.trim() || !form.price || !form.category || !form.stock || !form.apiKey.trim()) {
-      alert('Please fill all required fields (Name, Price, Category, Stock, Seller Key).');
+    if (!form.name.trim() || !form.price || !form.category || !form.stock) {
+      alert('Please fill all required fields (Name, Price, Category, Stock).');
       return;
     }
     if (!imageFile && !imagePreview && !editProduct) {
       alert('Please upload a product image.');
       return;
     }
+    
+    const userKey = user.apiKey || localStorage.getItem('user_key') || '';
+    if (!userKey) {
+      alert('Seller credentials not found. Please login again.');
+      return;
+    }
+    
     setSubmitting(true);
     try {
       const imageData: File | string = imageFile || imagePreview || '';
@@ -350,7 +356,7 @@ function ProductModal({ editProduct, onClose, onSubmit }: ProductModalProps) {
         images: additionalImages.length > 0 ? additionalImages : undefined, // Include additional images
         desc: form.desc,
         stock: parseInt(form.stock, 10),
-        apiKey: form.apiKey.trim(),
+        apiKey: userKey, // Use stored user API key
       };
       await onSubmit(submitForm);
     } finally {
@@ -360,145 +366,187 @@ function ProductModal({ editProduct, onClose, onSubmit }: ProductModalProps) {
 
   return (
     <Box className="modal-overlay" tag="div">
-      <Box className="modal" tag="div" width={"50%"}>
-        <Box className="modal-header" direction="row" align="center" justify="between" tag="div" >
-          <Text weight="bold" size="large">{editProduct ? '✏️ Edit Product' : '➕ Add New Product'}</Text>
+      <Box className="modal" tag="div">
+        <Box>
+        <Box className="modal-header" direction="row" align="center" justify="between" tag="div">
+          <Text weight="bold" size="large">
+            {editProduct ? '✏️ Edit Product' : '➕ Add New Product'}
+          </Text>
           <button className="modal-close" onClick={onClose}>✕</button>
         </Box>
 
         <Box className="modal-body" tag="div">
-          <Box className="form-row" tag="div">
+          {/* Basic Information Section */}
+          <div style={{ marginBottom: '1.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+              <span style={{ fontSize: '1.2rem', color: '#4f46e5', fontWeight: 'bold' }}>ℹ️</span>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#1e293b' }}>Basic Information</h3>
+            </div>
+            
+            <Box className="form-row" tag="div">
+              <Box className="form-group" tag="div">
+                <label>Product Name <span>*</span></label>
+                <input type="text" placeholder="e.g. Wireless Headphones"
+                  value={form.name} onChange={e => set('name', e.target.value)} />
+              </Box>
+              <Box className="form-group" tag="div">
+                <label>Price (₹) <span>*</span></label>
+                <input type="number" placeholder="e.g. 1999" min="1"
+                  value={form.price} onChange={e => set('price', e.target.value)} />
+              </Box>
+            </Box>
+
+            <Box className="form-row" tag="div">
+              <Box className="form-group" tag="div">
+                <label>Category <span>*</span></label>
+                <select value={form.category} onChange={e => set('category', e.target.value)}>
+                  <option value="">— Select Category —</option>
+                  {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                </select>
+              </Box>
+              <Box className="form-group" tag="div">
+                <label>Stock Quantity <span>*</span></label>
+                <input type="number" placeholder="e.g. 50" min="1"
+                  value={form.stock} onChange={e => set('stock', e.target.value)} />
+              </Box>
+            </Box>
+          </div>
+
+          {/* Description Section */}
+          <div style={{ marginBottom: '1.75rem' }}>
             <Box className="form-group" tag="div">
-              <label>Product Name *</label>
-              <input type="text" placeholder="e.g. Wireless Headphones"
-                value={form.name} onChange={e => set('name', e.target.value)} />
+              <label>Description</label>
+              <textarea placeholder="Brief description of your product…" value={form.desc}
+                onChange={e => set('desc', e.target.value)} />
             </Box>
+          </div>
+
+          {/* Images Section */}
+          <div style={{ marginBottom: '1.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+              <span style={{ fontSize: '1.2rem' }}>🖼️</span>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#1e293b' }}>Product Images</h3>
+            </div>
+
             <Box className="form-group" tag="div">
-              <label>Price (₹) *</label>
-              <input type="number" placeholder="e.g. 1999" min="1"
-                value={form.price} onChange={e => set('price', e.target.value)} />
-            </Box>
-          </Box>
-
-          <Box className="form-row" tag="div">
-            <Box className="form-group" tag="div">
-              <label>Category *</label>
-              <select value={form.category} onChange={e => set('category', e.target.value)}>
-                <option value="">— Select —</option>
-                {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-              </select>
-            </Box>
-            <Box className="form-group" tag="div">
-              <label>Stock Quantity *</label>
-              <input type="number" placeholder="e.g. 50" min="1"
-                value={form.stock} onChange={e => set('stock', e.target.value)} />
-            </Box>
-          </Box>
-
-          <Box className="form-group" tag="div">
-            <label>Seller Key (API Key) *</label>
-            <input type="text" placeholder="Enter your seller API key"
-              value={form.apiKey} onChange={e => set('apiKey', e.target.value)} />
-          </Box>
-
-          <Box className="form-group" tag="div">
-            <label>Description</label>
-            <textarea placeholder="Brief description…" value={form.desc}
-              onChange={e => set('desc', e.target.value)} />
-          </Box>
-
-          <Box className="form-group" tag="div">
-            <label>Product Image (local file)</label>
-            <Box className="image-upload-area" tag="div">
-              {imagePreview ? (
-                <Box className="image-preview" tag="div">
-                  <img src={imagePreview} alt="Preview" />
-                  <button type="button" className="btn-remove-img"
-                    onClick={() => { setImageFile(null); setImagePreview(''); }}>
-                    ✕ Remove
-                  </button>
-                </Box>
-              ) : (
-                <Box className="image-placeholder" tag="div" onClick={() => fileRef.current?.click()}>
-                  <Text size="3xl">📁</Text>
-                  <Text weight="bold" size="small">Click to upload image</Text>
-                  <Text size="xsmall" color="#64748b">PNG, JPG, WEBP supported</Text>
-                </Box>
-              )}
-              <input ref={fileRef} type="file" accept="image/*"
-                style={{ display: 'none' }} onChange={handleFileChange} />
-              {imagePreview && (
-                <button type="button" className="btn-change-img"
-                  onClick={() => fileRef.current?.click()}>
-                  Change Image
-                </button>
-              )}
-            </Box>
-          </Box>
-
-          <Box className="form-group" tag="div">
-            <label>Additional Product Images (Gallery)</label>
-            <Box className="image-upload-area" tag="div">
-              {additionalPreviews.length > 0 ? (
-                <Box tag="div" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '8px' }}>
-                  {additionalPreviews.map((preview, idx) => (
-                    <Box key={idx} style={{ position: 'relative' }}>
-                      <img src={preview} alt={`Additional ${idx + 1}`} style={{ 
-                        width: '100%', 
-                        height: '80px', 
-                        objectFit: 'cover',
-                        borderRadius: '8px',
-                        border: '1px solid #ddd'
-                      }} />
-                      <button type="button" onClick={() => removeAdditionalImage(idx)} style={{
-                        position: 'absolute',
-                        top: '-8px',
-                        right: '-8px',
-                        background: '#ef4444',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '50%',
-                        width: '24px',
-                        height: '24px',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>✕</button>
-                    </Box>
-                  ))}
-                  <Box onClick={() => multiFileRef.current?.click()} style={{
-                    width: '100%',
-                    height: '80px',
-                    border: '2px dashed #4f46e5',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    background: '#f3f4f6'
-                  }}>
-                    <Text size="2xl" style={{ color: '#4f46e5' }}>+</Text>
+              <label>Primary Image <span>*</span></label>
+              <Box className="image-upload-area" tag="div">
+                {imagePreview ? (
+                  <Box className="image-preview" tag="div">
+                    <img src={imagePreview} alt="Preview" />
+                    <button type="button" className="btn-remove-img"
+                      onClick={() => { setImageFile(null); setImagePreview(''); }}>
+                      ✕ Remove
+                    </button>
                   </Box>
-                </Box>
-              ) : (
-                <Box onClick={() => multiFileRef.current?.click()} className="image-placeholder" tag="div">
-                  <Text size="3xl">🖼️</Text>
-                  <Text weight="bold" size="small">Click to add more images</Text>
-                  <Text size="xsmall" color="#64748b">Make your product stand out with multiple photos</Text>
-                </Box>
-              )}
-              <input ref={multiFileRef} type="file" accept="image/*" multiple
-                style={{ display: 'none' }} onChange={handleMultipleFilesChange} />
+                ) : (
+                  <Box className="image-placeholder" tag="div" onClick={() => fileRef.current?.click()}>
+                    <Text size="3xl">📁</Text>
+                    <Text weight="bold" size="14px">Click to upload main image</Text>
+                    <Text size="xsmall" color="#64748b">PNG, JPG, WEBP • Max 5MB</Text>
+                  </Box>
+                )}
+                <input ref={fileRef} type="file" accept="image/*"
+                  style={{ display: 'none' }} onChange={handleFileChange} />
+                {imagePreview && (
+                  <button type="button" className="btn-change-img"
+                    onClick={() => fileRef.current?.click()}>
+                    Change Image
+                  </button>
+                )}
+              </Box>
             </Box>
-          </Box>
-        </Box>
 
+            <Box className="form-group" tag="div">
+              <label>Gallery Images</label>
+              <Box className="image-upload-area" tag="div">
+                {additionalPreviews.length > 0 ? (
+                  <Box tag="div" style={{ padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '12px' }}>
+                    {additionalPreviews.map((preview, idx) => (
+                      <Box key={idx} style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', border: '2px solid var(--border)', transition: 'all 0.2s' }}>
+                        <img src={preview} alt={`Additional ${idx + 1}`} style={{ 
+                          width: '100%', 
+                          height: '90px', 
+                          objectFit: 'cover',
+                          display: 'block'
+                        }} />
+                        <button type="button" onClick={() => removeAdditionalImage(idx)} style={{
+                          position: 'absolute',
+                          top: '-10px',
+                          right: '-10px',
+                          background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '28px',
+                          height: '28px',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 700,
+                          boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)',
+                          transition: 'all 0.2s'
+                        }} onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>✕</button>
+                      </Box>
+                    ))}
+                    <Box onClick={() => multiFileRef.current?.click()} style={{
+                      width: '100%',
+                      height: '90px',
+                      border: '2.5px dashed #4f46e5',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      background: 'rgba(79, 70, 229, 0.05)',
+                      transition: 'all 0.2s',
+                      fontSize: '1.5rem',
+                      fontWeight: 'bold'
+                    }} onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(79, 70, 229, 0.1)';
+                      e.currentTarget.style.borderColor = '#4338ca';
+                    }} onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(79, 70, 229, 0.05)';
+                      e.currentTarget.style.borderColor = '#4f46e5';
+                    }}>
+                      <span style={{ color: '#4f46e5' }}>+</span>
+                    </Box>
+                  </Box>
+                ) : (
+                  <Box onClick={() => multiFileRef.current?.click()} className="image-placeholder" tag="div">
+                    <Text size="3xl">🖼️</Text>
+                    <Text weight="bold" size="small">Add gallery images</Text>
+                    <Text size="xsmall" color="#64748b">Make your product stand out with multiple photos</Text>
+                  </Box>
+                )}
+                <input ref={multiFileRef} type="file" accept="image/*" multiple
+                  style={{ display: 'none' }} onChange={handleMultipleFilesChange} />
+              </Box>
+            </Box>
+          </div>
+
+          {/* Seller Information Section */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+              <span style={{ fontSize: '1.2rem' }}>✓</span>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#1e293b' }}>Authentication</h3>
+            </div>
+
+            <Box style={{ backgroundColor: '#f0fdf4', border: '2px solid #10b981', borderRadius: '8px', padding: '1rem' }} tag="div">
+              <Text size="xsmall" weight="bold" color="#10b981" style={{ marginBottom: '0.3rem' }}>✓ SELLER VERIFIED</Text>
+              <Text size="xsmall" color="#64748b">
+                You are logged in as <strong>{user.email}</strong>. Your seller API key is automatically used for this request.
+              </Text>
+            </Box>
+          </div>
+        </Box>
+</Box>
         <Box className="modal-footer" direction="row" justify="end" gap="small" tag="div">
           <button className="btn-cancel" onClick={onClose}>Cancel</button>
           <button className="btn-submit" onClick={handleSubmit} disabled={submitting}>
-            {submitting ? <><Spinner /> Saving…</> : 'Submit Product'}
+            {submitting ? <><Spinner /> Saving…</> : (editProduct ? '✅ Update Product' : '➕ Add Product')}
           </button>
         </Box>
       </Box>
@@ -729,9 +777,9 @@ export default function ShopPage() {
           console.warn('⚠️ Image is neither File nor base64:', form.image);
         }
 
-        console.log('🚀 Calling api.insertProduct with user_key header...');
+        console.log('🚀 Calling api.insertProduct...');
         console.log('📤 Request headers will include:', { user_key: userKey.substring(0, 10) + '...' });
-        const response = await api.insertProduct(formData, userKey, userEmail);
+        const response = await api.insertProduct(formData);
         console.log('✅ API Response:', response);
 
         // Check if API returned success
@@ -897,6 +945,7 @@ export default function ShopPage() {
       {modalOpen && (
         <ProductModal
           editProduct={editProduct}
+          user={user}
           onClose={closeProductModal}
           onSubmit={handleSubmitProduct}
         />

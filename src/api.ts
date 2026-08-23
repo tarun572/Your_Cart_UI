@@ -4,10 +4,8 @@
  */
 
 import type { 
-  User, 
   ApiKeyResult, 
-  SellerRegistration, 
-  SellerRegistrationResult,
+  SellerRegistration,
   Product,
   CartItem 
 } from './types';
@@ -92,14 +90,14 @@ export async function registerSeller(
   sellerData: SellerRegistration
 ): Promise<{ status: string; message: string; data: any[] }> {
   try {
-    const response = await fetch(`${API_BASE_URL}/registeration-api`, {
+    const response = await fetch(`${API_BASE_URL}/registration-api`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         user_email: sellerData.email,
         user_name: sellerData.fullName,
         user_role: 'seller',
-      }).toString(),
+      }),
     });
 
     if (!response.ok) {
@@ -248,14 +246,10 @@ export async function createProduct(
 /**
  * Insert Product API - Creates a new product with FormData for image upload
  * @param formData - FormData containing product information and image
- * @param sellerApiKey - The seller's API key for authentication
- * @param userEmail - The seller's email
  * @returns Response with product creation status and data
  */
 export async function insertProduct(
-  formData: FormData,
-  sellerApiKey: string,
-  userEmail: string
+  formData: FormData
 ): Promise<{ status: string; message: string; data: any }> {
   try {
     const response = await fetch(`${API_BASE_URL}/products`, {
@@ -436,6 +430,42 @@ export async function deleteProductApi(
     throw error;
   }
 }
+/**
+ * Send Seller API Key via Email
+ * @param sellerEmail - The seller's email address
+ * @param sellerApiKey - The seller's API key to send
+ * @param sellerName - The seller's full name
+ * @returns Response with email sending status
+ */
+export async function sendSellerKeyByEmail(
+  sellerEmail: string,
+  sellerApiKey: string,
+  sellerName: string
+): Promise<{ status: string; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/send-seller-key`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: sellerEmail,
+        api_key: sellerApiKey,
+        name: sellerName,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('✅ Seller key email sent:', data);
+    return data;
+  } catch (error) {
+    console.error('❌ Error sending seller key by email:', error);
+    throw error;
+  }
+}
+
 /*
  * Checkout API - Process buyer checkout
  * @param cartItems - Array of cart items

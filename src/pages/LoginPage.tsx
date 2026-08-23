@@ -88,7 +88,7 @@ export default function LoginPage() {
           email: userData.user_email || email, 
           name, 
           role: userData.user_role || role, 
-          ...(role === 'seller' ? { apiKey } : {}) 
+          ...(role === 'seller' ? { apiKey: userData.user_key } : {}) 
         };
 
         // Dispatch user, token, user_key, and status code to Redux store
