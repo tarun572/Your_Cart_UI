@@ -72,6 +72,15 @@ export default function RegisterSellerPage() {
           userKey: user_key,
         }));
         
+        // Send the API key via email
+        try {
+          const { sendSellerKeyByEmail } = await import('../api');
+          await sendSellerKeyByEmail(user_email, user_key, user_name);
+          console.log('✅ Seller API key sent to email:', user_email);
+        } catch (emailError) {
+          console.error('⚠️ Failed to send email, but registration was successful:', emailError);
+        }
+        
         setSuccess({
           userKey: user_key,
           message: result.message,
@@ -104,11 +113,12 @@ export default function RegisterSellerPage() {
             <Box className="api-key-reveal">
               <Text size="xsmall" weight="bold" color="#64748b">SELLER NAME</Text>
               <code className="key-code">{success.userName}</code>
-              <Text size="xsmall" weight="bold" color="#64748b" margin={{ top: 'medium' }}>YOUR SELLER API KEY</Text>
-              <code className="key-code">{success.userKey}</code>
-              <Text size="xsmall" color="#94a3b8">
-                Keep this key safe. You'll need it every time you log in as a Seller.
-              </Text>
+              <Box style={{ backgroundColor: '#f0fdf4', border: '2px solid #10b981', borderRadius: '8px', padding: '1rem', marginTop: '1.25rem' }}>
+                <Text size="xsmall" weight="bold" color="#10b981" style={{ marginBottom: '0.5rem' }}>✓ API KEY SENT TO EMAIL</Text>
+                <Text size="xsmall" color="#64748b">
+                  Your seller API key has been securely sent to your registered email. Check your inbox to retrieve your unique API key for login and product management.
+                </Text>
+              </Box>
             </Box>
             <button className="btn-primary" style={{ marginTop: '1.25rem' }} onClick={() => navigate('/login')}>
               Go to Login →
