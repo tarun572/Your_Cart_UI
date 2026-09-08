@@ -85,7 +85,7 @@ export default function Chatbot({ userRole = 'buyer', cartCount = 0 }: ChatbotPr
         onClick={() => setIsOpen(true)}
         title="Open Chat Assistant"
       >
-        <Chat size="24px" />
+        <Chat size="24px" color="#fff" />
         <span className="chatbot-badge">🤖</span>
       </button>
     );
@@ -101,7 +101,7 @@ export default function Chatbot({ userRole = 'buyer', cartCount = 0 }: ChatbotPr
             <Text weight="bold" size="small">
               Your Cart Assistant
             </Text>
-            <Text size="xsmall" color="#94a3b8">
+            <Text size="xsmall" color="#fff">
               Always here to help
             </Text>
           </div>

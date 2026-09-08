@@ -12,7 +12,15 @@ export default function AppHeader({ user, cartCount = 0, onLogout }: AppHeaderPr
   const navigate = useNavigate();
   return (
     <Box tag="nav" className="navbar" direction="row" align="center" justify="between">
-      <span className="logo" style={{ cursor: 'pointer' }} onClick={() => user && navigate('/shop')}>Your <span>Cart</span></span>
+      <button
+        className="logo"
+        type="button"
+        aria-label="Your Cart home"
+        onClick={() => user && navigate('/shop')}
+      >
+        <img src="/your-cart-icon.svg" alt="Your Cart" />
+        <span>Your <span>Cart</span></span>
+      </button>
 
       {user && (
         <Box direction="row" align="center" gap="small">
