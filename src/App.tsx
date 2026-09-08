@@ -1,4 +1,4 @@
-﻿import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+﻿import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { Grommet, Box } from 'grommet';
 import { store } from './store';
@@ -55,13 +55,13 @@ export default function App() {
   return (
     <Provider store={store}>
       <Grommet theme={grommetTheme} full>
-        <BrowserRouter basename={import.meta.env.BASE_URL}>
+        <HashRouter>
           <AuthProvider>
             <CartProvider>
               <AppLayout />
             </CartProvider>
           </AuthProvider>
-        </BrowserRouter>
+        </HashRouter>
       </Grommet>
     </Provider>
   );
