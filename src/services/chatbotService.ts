@@ -215,7 +215,7 @@ class ChatbotService {
     await new Promise(resolve => setTimeout(resolve, 500));
 
     // Generate bot response
-    const botMsg = this.generateResponse(userMessage.toLowerCase(), context);
+    const botMsg = this.generateResponse(userMessage.toLowerCase());
     this.conversationHistory.push(botMsg);
     this.saveHistory();
 
@@ -225,7 +225,7 @@ class ChatbotService {
   /**
    * Generate appropriate bot response based on user input
    */
-  private generateResponse(userInput: string, context?: ChatbotContext): Message {
+  private generateResponse(userInput: string): Message {
     const id = Date.now().toString();
     let text = '';
     let quickReplies: QuickReply[] | undefined;

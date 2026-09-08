@@ -72,15 +72,6 @@ export default function RegisterSellerPage() {
           userKey: user_key,
         }));
         
-        // Send the API key via email
-        try {
-          const { sendSellerKeyByEmail } = await import('../api');
-          await sendSellerKeyByEmail(user_email, user_key, user_name);
-          console.log('✅ Seller API key sent to email:', user_email);
-        } catch (emailError) {
-          console.error('⚠️ Failed to send email, but registration was successful:', emailError);
-        }
-        
         setSuccess({
           userKey: user_key,
           message: result.message,

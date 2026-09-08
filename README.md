@@ -1,16 +1,33 @@
-# React + Vite
+# Your Cart UI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React and TypeScript frontend for the Your Cart shopping application.
 
-Currently, two official plugins are available:
+## Requirements
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js
+- The shopping server running on `http://localhost:3001`
 
-## React Compiler
+## Install and run
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+npm run dev
+```
 
-## Expanding the ESLint configuration
+The Vite development server will print the local URL when it starts.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Seller registration and email
+
+Seller registration is sent to the server's `/registration-api` route. The server generates the seller's unique `user_key` and sends it to the registered email automatically. The UI does not call a separate email endpoint.
+
+The seller uses that key on the login page to access seller features and manage products.
+
+## Other commands
+
+```bash
+npm run build
+npm run lint
+npm run preview
+```
+
+The API base URL is currently defined in `src/api.ts` as `http://localhost:3001`.
