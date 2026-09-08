@@ -35,6 +35,33 @@ npm run preview
 
 The API base URL is currently defined in `src/api.ts` as `http://localhost:3001`.
 
+## Deploy free with GitHub Pages
+
+This repository is configured to deploy the Vite build to GitHub Pages through `.github/workflows/deploy.yml`.
+
+Before deploying:
+
+1. Deploy the server to Render and copy its public URL, for example `https://your-server.onrender.com`.
+2. Open the GitHub repository settings.
+3. Go to **Secrets and variables → Actions → Variables**.
+4. Create a repository variable named `VITE_API_URL` with the Render server URL.
+5. Go to **Settings → Pages** and set **Source** to **GitHub Actions**.
+6. Merge or push the deployment workflow to `main`.
+
+The deployed UI URL will be:
+
+```text
+https://tarun572.github.io/Your_Cart_UI/
+```
+
+After deployment, update the server's Render environment variable:
+
+```env
+FRONTEND_URL=https://tarun572.github.io/Your_Cart_UI
+```
+
+The GitHub Pages workflow uses the `VITE_API_URL` repository variable at build time. Do not put server secrets in the UI repository.
+
 ## Tests
 
 UI tests are kept in the root `tests/` folder and cover session persistence, Redux auth/cart/product state, and mock API behavior.

@@ -55,7 +55,7 @@ export default function App() {
   return (
     <Provider store={store}>
       <Grommet theme={grommetTheme} full>
-        <BrowserRouter>
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
           <AuthProvider>
             <CartProvider>
               <AppLayout />

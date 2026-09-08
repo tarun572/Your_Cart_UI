@@ -18,7 +18,7 @@ export default function AppHeader({ user, cartCount = 0, onLogout }: AppHeaderPr
         aria-label="Your Cart home"
         onClick={() => user && navigate('/shop')}
       >
-        <img src="/your-cart-icon.svg" alt="Your Cart" />
+        <img src={`${import.meta.env.BASE_URL}your-cart-icon.svg`} alt="Your Cart" />
         <span>Your <span>Cart</span></span>
       </button>
 
