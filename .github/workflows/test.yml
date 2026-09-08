@@ -34,7 +34,7 @@ jobs:
           format: markdown
           output: both
           fail_below_min: true
-          thresholds: '95 95 95 95'
+          thresholds: '95 95'
       - name: Add coverage to workflow summary
         run: cat code-coverage-results.md >> "$GITHUB_STEP_SUMMARY"
       - name: Comment coverage on pull request
