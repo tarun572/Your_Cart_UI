@@ -42,6 +42,8 @@ npm test -- --coverage
 
 The UI Jest configuration enforces at least 95% statements, branches, functions, and lines across `mockApi.ts`, `sessionManager.ts`, and `store.ts`.
 
+GitHub Actions publishes the coverage table in the workflow summary, adds or updates a coverage comment on pull requests, and uploads the full `coverage/` directory as an artifact for runs on `main` or `master`.
+
 For deployment, create a `.env` file from `.env.example` and set:
 
 ```env
