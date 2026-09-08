@@ -31,8 +31,21 @@ body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--
   box-shadow: 0 2px 12px rgba(79,70,229,.4);
   overflow: hidden;
 }
-.navbar .logo { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; }
-.navbar .logo span { color: var(--accent); }
+.navbar .logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.navbar .logo img { width: 42px; height: 42px; display: block; }
+.navbar .logo span span { color: var(--accent); }
 .navbar-right { display: flex; align-items: center; gap: 1rem; }
 .cart-btn {
   position: relative;
@@ -677,6 +690,7 @@ body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--
   /* Navbar: keep single row, shrink padding, hide user name */
   .navbar { padding: 0 1rem; height: 72px; }
   .navbar .logo { font-size: 1.15rem; }
+  .navbar .logo img { width: 34px; height: 34px; }
   .user-name { display: none; }
   .user-badge { padding: 4px 8px; gap: .25rem; }
   .logout-btn { padding: 5px 10px; font-size: .78rem; }
