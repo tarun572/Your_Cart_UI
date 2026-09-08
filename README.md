@@ -1,5 +1,8 @@
 # Your Cart UI
 
+[![UI tests](https://github.com/tarun572/Your_Cart_UI/actions/workflows/test.yml/badge.svg)](https://github.com/tarun572/Your_Cart_UI/actions/workflows/test.yml)
+[![Code coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/tarun572/Your_Cart_UI/main/coverage-badge.json)](https://github.com/tarun572/Your_Cart_UI/actions/workflows/test.yml)
+
 React and TypeScript frontend for the Your Cart shopping application.
 
 ## Requirements

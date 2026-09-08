@@ -2,12 +2,12 @@ name: UI Tests
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, unitTest]
   pull_request:
     branches: [main, master]
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
@@ -37,6 +37,18 @@ jobs:
           thresholds: '95 95'
       - name: Add coverage to workflow summary
         run: cat code-coverage-results.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Generate coverage badge data
+        if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'master' || github.ref_name == 'unitTest')
+        run: |
+          node -e "const fs=require('fs'); const xml=fs.readFileSync('coverage/cobertura-coverage.xml','utf8'); const match=xml.match(/<coverage[^>]*line-rate=\"([0-9.]+)\"/); if (!match) throw new Error('Coverage line-rate was not found'); const value=(Number(match[1])*100).toFixed(2).replace(/\\.00$/, ''); const color=Number(value)>=95?'brightgreen':Number(value)>=80?'yellow':'red'; fs.writeFileSync('coverage-badge.json', JSON.stringify({schemaVersion:1,label:'coverage',message:value+'%',color}));"
+      - name: Commit coverage badge on main branch
+        if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'master' || github.ref_name == 'unitTest')
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add coverage-badge.json
+          git diff --cached --quiet || git commit -m "chore: update coverage badge [skip ci]"
+          git push
       - name: Comment coverage on pull request
         if: github.event_name == 'pull_request'
         uses: marocchino/sticky-pull-request-comment@v2
