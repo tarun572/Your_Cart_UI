@@ -56,7 +56,6 @@ function ProductDetailLayer({
     : [product.image || PLACEHOLDER];
   
   const currentImage = allImages[selectedImageIndex] || PLACEHOLDER;
-console.log("333333:", product);
   return (
     <Layer onEsc={onClose} onClickOutside={onClose} modal position="center" animation="fadeIn">
       <Box width={{ max: '640px', min: '320px' }} round="small" overflow="hidden" elevation="large">
@@ -640,18 +639,14 @@ export default function ShopPage() {
     dispatch(productsActions.setProductsLoading(true));
     const userEmail = user.email || '';
     
-    console.log('📍 useEffect triggered, fetching products for email:', userEmail);
     
     // Fetch products using real API with user email
     api.getProductsByEmail(userEmail)
       .then(data => {
-        console.log('✅ Products fetched from API:', data);
-        console.log('📊 Total products:', data.length);
         dispatch(productsActions.setProducts(data));
         dispatch(productsActions.setProductsLoading(false));
       })
       .catch((error) => {
-        console.error('❌ Error loading products:', error);
         dispatch(productsActions.setProductsError(error instanceof Error ? error.message : 'Failed to load products'));
         dispatch(productsActions.setProductsLoading(false));
       });
@@ -677,17 +672,13 @@ export default function ShopPage() {
     apiKey: string;
   }) {
     try {
-      console.log('📋 handleSubmitProduct called with:', form);
-      console.log('🔍 editingId:', editingId, ', user.apiKey:', user.apiKey, ', user.email:', user.email);
       
       if (editingId !== null) {
-        console.log('✏️ Editing existing product:', editingId);
         
         const userKey: string = form.apiKey || user.apiKey || '';
         const userEmail: string = user.email || '';
         
         if (!userKey || !userEmail) {
-          console.error('❌ Missing seller info for edit:', { userKey, userEmail });
           showToast('Seller information is missing! Please provide seller key.');
           return;
         }
@@ -707,11 +698,9 @@ export default function ShopPage() {
           productData.image = form.image;
         }
 
-        console.log('🔑 Using edit credentials:', { userKey: userKey.substring(0, 10) + '...', userEmail });
         const response = await api.editProductApi(editingId, userEmail, userKey, productData);
         
         if (response.status === 'Success' || response.status === 'success') {
-          console.log('✅ Product edit success');
           // Update the local product with new data
           const updated: Product = {
             id: editingId,
@@ -727,12 +716,10 @@ export default function ShopPage() {
           dispatch(productsActions.updateProduct(updated));
           showToast('✅ Product updated!');
         } else {
-          console.error('❌ API returned error:', response.message);
           showToast('❌ ' + (response.message || 'Failed to update product'));
           return;
         }
       } else {
-        console.log('➕ Creating new product');
         // Create new product using real API
         
         // Get user_key from form input (seller provides it)
@@ -740,13 +727,10 @@ export default function ShopPage() {
         const userEmail: string = user.email || '';
         
         if (!userKey || !userEmail) {
-          console.error('❌ Missing seller info:', { userKey, userEmail });
           showToast('Seller information is missing! Please check seller key and login again.');
           return;
         }
 
-        console.log('🔑 Using credentials from form:', { userKey: userKey.substring(0, 10) + '...', userEmail });
-        console.log('📦 Building FormData...');
         const formData = new FormData();
         formData.append('user_email', userEmail);
         formData.append('user_key', userKey);
@@ -758,11 +742,9 @@ export default function ShopPage() {
 
         // Handle image upload
         if (typeof form.image !== 'string') {
-          console.log('🖼️ Image is a File object:', form.image);
           // It's a File object
           formData.append('image', form.image);
         } else if (form.image.startsWith('data:')) {
-          console.log('🖼️ Image is base64, converting to Blob...');
           // Convert base64 to Blob
           const base64Data = form.image.split(',')[1];
           const byteCharacters = atob(base64Data);
@@ -774,22 +756,16 @@ export default function ShopPage() {
           const blob = new Blob([byteArray], { type: 'image/jpeg' });
           formData.append('image', blob, 'product-image.jpg');
         } else {
-          console.warn('⚠️ Image is neither File nor base64:', form.image);
         }
 
-        console.log('🚀 Calling api.insertProduct...');
-        console.log('📤 Request headers will include:', { user_key: userKey.substring(0, 10) + '...' });
         const response = await api.insertProduct(formData);
-        console.log('✅ API Response:', response);
 
         // Check if API returned success
         if (response.status !== 'Success' || !response.data) {
-          console.error('❌ API returned error:', response.message);
           showToast(response.message || 'Failed to add product');
           return;
         }
 
-        console.log('🎉 Product created successfully, creating Redux entry...');
         // Create product object from response
         const created: Product = {
           id: response.data.product_id || Date.now(),
@@ -809,7 +785,6 @@ export default function ShopPage() {
       }
       closeProductModal();
     } catch (error) {
-      console.error('❌ Error submitting product:', error);
       showToast('Error saving product. Please try again.');
     }
   }
@@ -818,7 +793,6 @@ export default function ShopPage() {
     setDeletingId(id);
     try {
       const product = products.find(p => p.id === id);
-      console.log("products @@@@@" , products);
       if (!product) {
         showToast('Product not found');
         return;
@@ -828,16 +802,13 @@ export default function ShopPage() {
       const userEmail = user.email || '';
 
       if (!userKey || !userEmail) {
-        console.error('❌ Missing seller info for delete:', { userKey, userEmail });
         showToast('Seller information is missing! Please login again.');
         return;
       }
 
-      console.log('🗑️ Deleting product:', product.name);
       const response = await api.deleteProductApi(id, userEmail, userKey);
       
       if (response.status === 'Success' || response.status === 'success') {
-        console.log('✅ Product deleted via API');
         dispatch(productsActions.removeProduct(id));
         setCart(prev => prev.filter(c => c.id !== id));
         showToast('✅ Product deleted!');
@@ -845,7 +816,6 @@ export default function ShopPage() {
         showToast('❌ ' + (response.message || 'Failed to delete product'));
       }
     } catch (error) {
-      console.error('❌ Error deleting product:', error);
       showToast('Error deleting product. Please try again.');
     } finally {
       setDeletingId(null);
@@ -876,15 +846,6 @@ export default function ShopPage() {
       ? (products.filter(p => p.seller === user.email) || [])
       : products
     : [];
-
-  console.log('📋 Products state:', { 
-    isArray: Array.isArray(products),
-    totalProducts: Array.isArray(products) ? products.length : 0,
-    userRole: user.role,
-    userEmail: user.email,
-    displayedCount: displayedProducts.length,
-    displayedProducts,
-  });
 
   return (
     <Box fill direction="column" tag="div">

@@ -153,7 +153,6 @@ class ChatbotService {
         }));
       }
     } catch (error) {
-      console.error('Error loading chat history:', error);
       this.conversationHistory = [];
     }
     return this.conversationHistory;
@@ -166,7 +165,6 @@ class ChatbotService {
     try {
       localStorage.setItem('chatbot_history', JSON.stringify(this.conversationHistory));
     } catch (error) {
-      console.error('Error saving chat history:', error);
     }
   }
 

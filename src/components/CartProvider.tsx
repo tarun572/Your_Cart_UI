@@ -25,7 +25,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       try {
         const saved = localStorage.getItem(`cart_${user.email}`);
         setCart(saved ? JSON.parse(saved) : []);
-        console.log('📦 Cart restored for:', user.email);
       } catch {
         setCart([]);
       }
@@ -38,7 +37,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (user?.role === 'buyer' && user.email) {
       localStorage.setItem(`cart_${user.email}`, JSON.stringify(cart));
-      console.log('💾 Cart saved for:', user.email);
     }
   }, [cart, user?.email, user?.role]);
 

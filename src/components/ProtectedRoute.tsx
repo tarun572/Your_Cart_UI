@@ -10,7 +10,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user } = useAuth();
   
   if (!user) {
-    console.log('🔒 Access denied - redirecting to login');
     return <Navigate to="/login" replace />;
   }
   

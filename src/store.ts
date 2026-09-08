@@ -41,30 +41,24 @@ export const authSlice = createSlice({
       state.loading = false;
 
       // Store all authentication data in localStorage
-      console.log('Saving to localStorage:', action.payload);
-      
       // Store token
       if (action.payload.token) {
         localStorage.setItem('auth_token', action.payload.token);
-        console.log('✓ Token saved:', action.payload.token.substring(0, 20) + '...');
       }
       
       // Store user email
       if (action.payload.user?.email) {
         localStorage.setItem('user_email', action.payload.user.email);
-        console.log('✓ User email saved:', action.payload.user.email);
       }
       
       // Store user role
       if (action.payload.user?.role) {
         localStorage.setItem('user_role', action.payload.user.role);
-        console.log('✓ User role saved:', action.payload.user.role);
       }
       
       // Store user key (if seller)
       if (action.payload.userKey) {
         localStorage.setItem('user_key', action.payload.userKey);
-        console.log('✓ User key saved:', action.payload.userKey);
       }
     },
     // Clear user on logout
@@ -77,12 +71,10 @@ export const authSlice = createSlice({
       state.loading = false;
 
       // Clear all auth-related data from localStorage
-      console.log('Clearing localStorage:');
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_email');
       localStorage.removeItem('user_role');
       localStorage.removeItem('user_key');
-      console.log('✓ All auth data cleared from localStorage');
     },
     // Set loading state
     setLoading: (state, action: PayloadAction<boolean>) => {

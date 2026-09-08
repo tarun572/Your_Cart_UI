@@ -10,7 +10,12 @@ import type {
   CartItem 
 } from './types';
 
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem('auth_token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 /**
  * Login API - Validates user credentials and returns authentication token
@@ -35,10 +40,7 @@ export async function loginUser(
       }).toString(),
     });
 
-    console.log('API Response Status:', response.status);
-
     const data = await response.json();
-    console.log('API Raw Response:', data);
     
     // Add status code to response for easy access
     const result = {
@@ -46,10 +48,8 @@ export async function loginUser(
       statusCode: response.status,
     };
     
-    console.log('Final result with statusCode:', result);
     return result;
   } catch (error) {
-    console.error('Error during login:', error);
     throw error;
   }
 }
@@ -76,7 +76,6 @@ export async function validateSellerKey(apiKey: string): Promise<ApiKeyResult> {
     const data: ApiKeyResult = await response.json();
     return data;
   } catch (error) {
-    console.error('Error validating seller key:', error);
     throw error;
   }
 }
@@ -105,10 +104,8 @@ export async function registerSeller(
     }
 
     const data = await response.json();
-    console.log('Registration response:', data);
     return data;
   } catch (error) {
-    console.error('Error registering seller:', error);
     throw error;
   }
 }
@@ -131,7 +128,6 @@ export async function getAllProducts(): Promise<Product[]> {
     const data: Product[] = await response.json();
     return data;
   } catch (error) {
-    console.error('Error fetching products:', error);
     throw error;
   }
 }
@@ -154,15 +150,10 @@ export async function getProductsByEmail(userEmail: string): Promise<Product[]> 
     }
 
     const apiResponse = await response.json();
-    console.log('✅ API Response:', apiResponse);
-
     // Extract data array from response
     if (!apiResponse.data || !Array.isArray(apiResponse.data)) {
-      console.warn('⚠️ No data array in response');
       return [];
     }
-
-    console.log(`📦 Found ${apiResponse.data.length} products`);
 
     // Transform API response to Product interface
     const products: Product[] = apiResponse.data.map((item: any, index: number) => {
@@ -177,14 +168,10 @@ export async function getProductsByEmail(userEmail: string): Promise<Product[]> 
         seller: item.seller_email?.toString() || 'Unknown Seller',
         sellerApiKey: item.user_key?.toString() || item.seller_email?.toString() || '',
       };
-      console.log(`✅ Transformed product ${index}:`, product);
       return product;
     });
-
-    console.log('🎉 All products transformed:', products);
     return products;
   } catch (error) {
-    console.error('Error fetching products by email:', error);
     throw error;
   }
 }
@@ -209,7 +196,6 @@ export async function getSellerProducts(sellerApiKey: string): Promise<Product[]
     const data: Product[] = await response.json();
     return data;
   } catch (error) {
-    console.error('Error fetching seller products:', error);
     throw error;
   }
 }
@@ -238,7 +224,6 @@ export async function createProduct(
     const data: Product = await response.json();
     return data;
   } catch (error) {
-    console.error('Error creating product:', error);
     throw error;
   }
 }
@@ -252,8 +237,9 @@ export async function insertProduct(
   formData: FormData
 ): Promise<{ status: string; message: string; data: any }> {
   try {
-    const response = await fetch(`${API_BASE_URL}/products`, {
+    const response = await fetch(`${API_BASE_URL}/insert-api`, {
       method: 'POST',
+      headers: authHeaders(),
       body: formData,
     });
 
@@ -262,10 +248,8 @@ export async function insertProduct(
     }
 
     const data = await response.json();
-    console.log('Product creation response:', data);
     return data;
   } catch (error) {
-    console.error('Error inserting product:', error);
     throw error;
   }
 }
@@ -296,7 +280,6 @@ export async function updateProduct(
     const data: Product = await response.json();
     return data;
   } catch (error) {
-    console.error('Error updating product:', error);
     throw error;
   }
 }
@@ -329,10 +312,8 @@ export async function deleteProduct(
     }
 
     const data = await response.json();
-    console.log('✅ Product deletion response:', data);
     return data;
   } catch (error) {
-    console.error('❌ Error deleting product:', error);
     throw error;
   }
 }
@@ -376,6 +357,7 @@ export async function editProductApi(
       method: 'PUT',
       headers: {
         'user_key': userKey,
+        ...authHeaders(),
       },
       body: formData,
     });
@@ -385,10 +367,8 @@ export async function editProductApi(
     }
 
     const data = await response.json();
-    console.log('✅ Product edit response:', data);
     return data;
   } catch (error) {
-    console.error('❌ Error editing product:', error);
     throw error;
   }
 }
@@ -412,6 +392,7 @@ export async function deleteProductApi(
       headers: {
         'Content-Type': 'application/json',
         'user_key': userKey,
+        ...authHeaders(),
       },
       body: JSON.stringify({
         user_email: userEmail,
@@ -423,49 +404,11 @@ export async function deleteProductApi(
     }
 
     const data = await response.json();
-    console.log('✅ Product delete API response:', data);
     return data;
   } catch (error) {
-    console.error('❌ Error deleting product via API:', error);
     throw error;
   }
 }
-/**
- * Send Seller API Key via Email
- * @param sellerEmail - The seller's email address
- * @param sellerApiKey - The seller's API key to send
- * @param sellerName - The seller's full name
- * @returns Response with email sending status
- */
-export async function sendSellerKeyByEmail(
-  sellerEmail: string,
-  sellerApiKey: string,
-  sellerName: string
-): Promise<{ status: string; message: string }> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/send-seller-key`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: sellerEmail,
-        api_key: sellerApiKey,
-        name: sellerName,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log('✅ Seller key email sent:', data);
-    return data;
-  } catch (error) {
-    console.error('❌ Error sending seller key by email:', error);
-    throw error;
-  }
-}
-
 /*
  * Checkout API - Process buyer checkout
  * @param cartItems - Array of cart items
@@ -490,7 +433,6 @@ export async function checkout(
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('Error during checkout:', error);
     throw error;
   }
 }

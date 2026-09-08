@@ -1,0 +1,50 @@
+name: UI Tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  test:
+    name: Jest tests and coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run Jest tests with coverage
+        run: npm test -- --coverage --coverageReporters=text --coverageReporters=lcov --coverageReporters=cobertura
+      - name: Create coverage summary
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: coverage/cobertura-coverage.xml
+          badge: true
+          format: markdown
+          output: both
+          fail_below_min: true
+          thresholds: '95 95'
+      - name: Add coverage to workflow summary
+        run: cat code-coverage-results.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Comment coverage on pull request
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: ui-coverage
+          path: code-coverage-results.md
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-coverage-${{ github.sha }}
+          path: coverage

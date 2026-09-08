@@ -27,8 +27,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userRole = localStorage.getItem('user_role');
       const userKey = localStorage.getItem('user_key');
 
-      console.log('🔍 Checking session:', { authToken: !!authToken, userEmail, userRole });
-
       // If we have a valid token and user data, restore the session
       if (authToken && userEmail && userRole) {
         const restoredUser: User = {
@@ -37,13 +35,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           role: userRole as 'seller' | 'buyer',
           apiKey: userKey || undefined,
         };
-        console.log('✅ Session restored:', restoredUser);
         setUser(restoredUser);
-      } else {
-        console.log('❌ No valid session found');
       }
     } catch (error) {
-      console.error('❌ Error restoring session:', error);
     } finally {
       setIsLoading(false);
     }
@@ -78,7 +72,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem('user_email');
           localStorage.removeItem('user_role');
           localStorage.removeItem('user_key');
-          console.log('✅ Session cleared');
         },
       }}
     >

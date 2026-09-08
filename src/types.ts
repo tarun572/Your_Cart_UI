@@ -41,6 +41,9 @@ export interface SellerRegistration {
   fullName: string;
   email: string;
   userRole: 'seller',
+  businessName?: string;
+  phone?: string;
+  password?: string;
 }
 
 export interface SellerRegistrationResult {
