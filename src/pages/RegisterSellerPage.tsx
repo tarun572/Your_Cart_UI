@@ -54,8 +54,6 @@ export default function RegisterSellerPage() {
         userRole:     'seller',
       });
       
-      console.log('Registration result:', result);
-      
       if (result.status === 'Success' && result.data && result.data.length > 0) {
         const userData = result.data[0];
         const { user_key, user_name, user_email, token } = userData;
@@ -81,7 +79,6 @@ export default function RegisterSellerPage() {
         setErrors({ fullName: result.message || 'Registration failed' });
       }
     } catch (error) {
-      console.error('Registration error:', error);
       setErrors({ fullName: error instanceof Error ? error.message : 'An error occurred during registration' });
     } finally {
       setLoading(false);

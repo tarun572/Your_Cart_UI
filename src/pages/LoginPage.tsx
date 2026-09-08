@@ -60,9 +60,6 @@ export default function LoginPage() {
         role === 'seller' ? apiKey : undefined
       );
 
-      console.log('Full Login Result:', loginResult);
-      console.log('Status Code:', loginResult.statusCode);
-
       // Check if response status is 200
       if (loginResult.statusCode === 200) {
         // API returns data as an array, extract from data[0]
@@ -77,10 +74,8 @@ export default function LoginPage() {
         }
 
         const token = userData.token || '';
-        console.log('Token extracted:', token);
-        
         if (!token) {
-          console.warn('⚠️ WARNING: Token not found in API response!');
+          setKeyErr('Login succeeded but no authentication token was returned.');
         }
         
         const name = userData.user_name || email.split('@')[0].replace(/[._-]/g, ' ');
@@ -103,7 +98,6 @@ export default function LoginPage() {
         login(user);
 
         // Navigate to shop on successful login (status 200)
-        console.log('Login successful! Redirecting to /shop');
         navigate('/shop');
       } else {
         // Response status is not 200
@@ -113,13 +107,11 @@ export default function LoginPage() {
         dispatch(authActions.setStatusCode(loginResult.statusCode || 400));
         setLoading(false);
         dispatch(authActions.setLoading(false));
-        console.log('API Error - Status:', loginResult.statusCode);
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Login verification failed. Please try again.';
       setKeyErr(errorMsg);
       dispatch(authActions.setError(errorMsg));
-      console.error('Login error:', error);
       setLoading(false);
       dispatch(authActions.setLoading(false));
     }

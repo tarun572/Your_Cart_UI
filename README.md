@@ -31,3 +31,21 @@ npm run preview
 ```
 
 The API base URL is currently defined in `src/api.ts` as `http://localhost:3001`.
+
+## Tests
+
+UI tests are kept in the root `tests/` folder and cover session persistence, Redux auth/cart/product state, and mock API behavior.
+
+```bash
+npm test -- --coverage
+```
+
+The UI Jest configuration enforces at least 95% statements, branches, functions, and lines across `mockApi.ts`, `sessionManager.ts`, and `store.ts`.
+
+For deployment, create a `.env` file from `.env.example` and set:
+
+```env
+VITE_API_URL=https://your-backend-domain.com
+```
+
+Vite exposes `VITE_*` values to the browser, so do not put secrets in the UI environment file.

@@ -60,7 +60,6 @@ export default function Chatbot({ userRole = 'buyer', cartCount = 0 }: ChatbotPr
         const responses = await chatbotService.processMessage(messageText, { userRole, cartCount });
         setMessages(prev => [...prev, ...responses]);
       } catch (error) {
-        console.error('Error processing message:', error);
       } finally {
         setIsLoading(false);
         setTimeout(scrollToBottom, 100);
