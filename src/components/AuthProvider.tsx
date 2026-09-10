@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { User } from '../types';
+import { chatbotService } from '../services/chatbotService';
 
 interface AuthCtx {
   user: User | null;
@@ -65,8 +66,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        login: (u) => setUser(u),
+        login: (u) => {
+          chatbotService.clearHistory();
+          setUser(u);
+        },
         logout: () => {
+          chatbotService.clearHistory();
           setUser(null);
           localStorage.removeItem('auth_token');
           localStorage.removeItem('user_email');
