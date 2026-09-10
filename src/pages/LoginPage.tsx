@@ -33,14 +33,14 @@ export default function LoginPage() {
     return '';
   }
 
-  async function handleSubmit() {
-    const eErr = validateEmail(email);
+  async function handleLogin(loginEmail = email, loginRole = role, loginApiKey = apiKey) {
+    const eErr = validateEmail(loginEmail);
     setEmailErr(eErr);
     if (eErr) return;
-    if (!role) { alert('Please select a role.'); return; }
+    if (!loginRole) { alert('Please select a role.'); return; }
 
-    if (role === 'seller') {
-      if (!apiKey.trim()) { 
+    if (loginRole === 'seller') {
+      if (!loginApiKey.trim()) {
         setKeyErr('API key is required to access the Seller portal.'); 
         return; 
       }
@@ -55,9 +55,9 @@ export default function LoginPage() {
     try {
       // Call login API from api.ts
       const loginResult = await loginUser(
-        email,
-        role,
-        role === 'seller' ? apiKey : undefined
+        loginEmail,
+        loginRole,
+        loginRole === 'seller' ? loginApiKey : undefined
       );
 
       // Check if response status is 200
@@ -78,12 +78,12 @@ export default function LoginPage() {
           setKeyErr('Login succeeded but no authentication token was returned.');
         }
         
-        const name = userData.user_name || email.split('@')[0].replace(/[._-]/g, ' ');
+        const name = userData.user_name || loginEmail.split('@')[0].replace(/[._-]/g, ' ');
         const user: User = { 
-          email: userData.user_email || email, 
+          email: userData.user_email || loginEmail,
           name, 
-          role: userData.user_role || role, 
-          ...(role === 'seller' ? { apiKey: userData.user_key } : {}) 
+          role: userData.user_role || loginRole,
+          ...(loginRole === 'seller' ? { apiKey: userData.user_key } : {})
         };
 
         // Dispatch user, token, user_key, and status code to Redux store
@@ -115,6 +115,17 @@ export default function LoginPage() {
       setLoading(false);
       dispatch(authActions.setLoading(false));
     }
+  }
+
+  function handleSubmit() {
+    return handleLogin();
+  }
+
+  function handleGuestLogin() {
+    setEmail('guest@gmail.com');
+    setRole('buyer');
+    setApiKey('');
+    return handleLogin('guest@gmail.com', 'buyer');
   }
 
   return (
@@ -197,6 +208,9 @@ export default function LoginPage() {
 
         <button className="btn-primary" onClick={handleSubmit} disabled={loading}>
           {loading ? <><Spinner /> Verifying…</> : 'Enter Your Cart →'}
+        </button>
+        <button className="btn-guest" onClick={handleGuestLogin} disabled={loading}>
+          Continue as Guest
         </button>
         </Box>
       </Box>

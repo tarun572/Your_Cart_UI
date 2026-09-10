@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Box, Text } from 'grommet';
 import { useAuth, useCart } from '../App';
 import AppHeader from '../components/AppHeader';
-import * as mockApi from '../mockApi';
+import * as api from '../api';
 import type { Product, User } from '../types';
 
 const PLACEHOLDER = 'https://placehold.co/400x300/e0e7ff/4f46e5?text=Product';
@@ -23,11 +23,14 @@ export default function CartPage() {
   const [done, setDone]         = useState(false);
 
   useEffect(() => {
-    mockApi.getProducts().then(data => { setProducts(data); setLoading(false); });
-  }, []);
+    api.getProductsByEmail(user.email)
+      .then(data => setProducts(data))
+      .catch(() => setProducts([]))
+      .finally(() => setLoading(false));
+  }, [user.email]);
 
   function changeQty(id: number, delta: number) {
-    const prod = products.find(p => p.id === id);
+    const prod = products.find(p => String(p.id) === String(id));
     setCart(prev => prev.reduce<typeof prev>((acc, item) => {
       if (item.id !== id) return [...acc, item];
       const newQty = item.qty + delta;
@@ -44,7 +47,7 @@ export default function CartPage() {
 
   const cartCount = cart.reduce((s, c) => s + c.qty, 0);
   const total = cart.reduce((sum, item) => {
-    const p = products.find(prod => prod.id === item.id);
+    const p = products.find(prod => String(prod.id) === String(item.id));
     return p ? sum + p.price * item.qty : sum;
   }, 0);
 
@@ -77,15 +80,15 @@ export default function CartPage() {
     <Box style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <AppHeader user={user} cartCount={cartCount} onLogout={handleLogout} />
 
-      <div className="container">
+      <div style={{ "maxWidth": "1200px", padding: '2rem 1.5rem' }}>
         {/* Page title */}
         <div className="cart-page-header">
-          <Text size="xlarge" weight="bold">🛒 Your Cart</Text>
           <button className="btn-back" onClick={() => navigate('/shop')}>← Continue Shopping</button>
+          
         </div>
 
         {loading ? (
-          <Box direction="row" align="center" gap="small">
+          <Box direction="row" align="center" gap="small" justify="center">
             <Spinner /><Text color="#64748b">Loading…</Text>
           </Box>
         ) : cart.length === 0 ? (
@@ -99,10 +102,12 @@ export default function CartPage() {
           </Box>
         ) : (
           <div className="cart-page-layout">
+            <Text size="xlarge" weight="bold">🛒 Cart</Text>
             {/* Items list */}
             <div className="cart-page-items">
+
               {cart.map(item => {
-                const prod = products.find(p => p.id === item.id);
+                const prod = products.find(p => String(p.id) === String(item.id));
                 if (!prod) return null;
                 const lineTotal = prod.price * item.qty;
                 return (

@@ -18,16 +18,24 @@ export function useCart(): CartCtx {
 export function CartProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [hydratedCartKey, setHydratedCartKey] = useState<string | null>(null);
 
   // Load cart from localStorage when a buyer logs in (or clear on logout)
   useEffect(() => {
-    if (user?.role === 'buyer' && user.email) {
+    const cartKey = user?.role === 'buyer' && user.email
+      ? `cart_${user.email}`
+      : null;
+
+    setHydratedCartKey(null);
+
+    if (cartKey) {
       try {
-        const saved = localStorage.getItem(`cart_${user.email}`);
+        const saved = localStorage.getItem(cartKey);
         setCart(saved ? JSON.parse(saved) : []);
       } catch {
         setCart([]);
       }
+      setHydratedCartKey(cartKey);
     } else {
       setCart([]);
     }
@@ -35,10 +43,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Persist cart to localStorage on every change (buyers only)
   useEffect(() => {
-    if (user?.role === 'buyer' && user.email) {
-      localStorage.setItem(`cart_${user.email}`, JSON.stringify(cart));
+    const cartKey = user?.role === 'buyer' && user.email
+      ? `cart_${user.email}`
+      : null;
+
+    if (cartKey && hydratedCartKey === cartKey) {
+      localStorage.setItem(cartKey, JSON.stringify(cart));
     }
-  }, [cart, user?.email, user?.role]);
+  }, [cart, hydratedCartKey, user?.email, user?.role]);
 
   return (
     <CartContext.Provider value={{ cart, setCart }}>

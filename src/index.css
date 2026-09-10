@@ -173,6 +173,20 @@ body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--
   transition: background .2s;
 }
 .btn-primary:hover { background: var(--primary-h); }
+.btn-guest {
+  width: 100%;
+  margin-top: .75rem;
+  padding: 10px;
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 8px;
+  font-size: .95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-guest:hover { background: #f0f0ff; }
+.btn-guest:disabled { opacity: .6; cursor: not-allowed; }
 
 /* ── Main App ───────────────────────────────────────── */
 .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
@@ -515,7 +529,7 @@ body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--
 .cart-page-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  /* justify-content: space-between; */
   margin-bottom: 1.75rem;
 }
 .btn-back {
@@ -540,7 +554,8 @@ body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--
 }
 .cart-page-layout {
   display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: 1fr;
+  margin: 5rem 12rem;
   gap: 2rem;
   align-items: start;
 }
@@ -568,7 +583,7 @@ body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--
   border-radius: 10px;
   flex-shrink: 0;
 }
-.cart-page-item-info { flex: 1; }
+.cart-page-item-info { flex: 1; display: grid; }
 .cart-page-item-right {
   display: flex;
   flex-direction: column;
