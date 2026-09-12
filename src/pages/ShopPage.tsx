@@ -57,10 +57,10 @@ function ProductDetailLayer({
   
   const currentImage = allImages[selectedImageIndex] || PLACEHOLDER;
   return (
-    <Layer onEsc={onClose} onClickOutside={onClose} modal position="center" animation="fadeIn">
-      <Box width={{ max: '640px', min: '320px' }} round="small" overflow="hidden" elevation="large">
+    <Layer onEsc={onClose} onClickOutside={onClose} modal position="center" animation="fadeIn" style={{    top: "55%" ,width: "70%" , background:"none"}}>
+      <Box round="small" overflow="hidden" elevation="large" style={{ height: '35rem', overflowY: 'auto' , background:"white"}}>
         {/* Image gallery header */}
-        <Box height="260px" background="light-2" style={{ position: 'relative' }}>
+        <Box background="light-2" style={{ position: 'relative', height:"100%" }}>
           <Image
             src={currentImage}
             alt={`${product.name} - Image ${selectedImageIndex + 1}`}
@@ -74,7 +74,7 @@ function ProductDetailLayer({
           {/* Close button */}
           <Box style={{ position: 'absolute', top: 12, right: 12 }}>
             <Button
-              icon={<Close size="small" />}
+              icon={<Close size="small" color="white"/>}
               onClick={onClose}
               plain
               style={{
@@ -149,7 +149,7 @@ function ProductDetailLayer({
             gap="xsmall"
             pad="small"
             background="#f8f9fa"
-            style={{ scrollBehavior: 'smooth' }}
+            style={{ scrollBehavior: 'smooth' , minHeight:"80px" , overflow: 'hidden' }}
           >
             {allImages.map((img, index) => (
               <Box
@@ -177,7 +177,7 @@ function ProductDetailLayer({
         )}
 
         {/* Body */}
-        <Box pad="medium" gap="small" background="white">
+        <Box pad="medium" gap="small" background="white" className="dubey" >
           <Text size="xlarge" weight="bold" color="#1e293b">{product.name}</Text>
 
           <Box direction="row" align="center" gap="small">
@@ -224,19 +224,19 @@ function ProductDetailLayer({
               />
             )}
             {isMySelling && (
-              <>
+              <Box direction="row" gap="small" style={{ flex: 1, padding:"0.5rem", marginBottom:"0.5rem" , height:"3rem"}}>
                 <Button
                   label="✏️ Edit"
                   onClick={() => { onEdit(product.id); onClose(); }}
-                  style={{ background: '#e0e7ff', color: '#4f46e5', border: 'none', borderRadius: 8, flex: 1 }}
+                  style={{ background: '#e0e7ff', color: '#4f46e5', border: 'none', borderRadius: 8, flex: 1 , height:"2rem" }}
                 />
                 <Button
                   label={deleting ? 'Deleting…' : '🗑 Delete'}
                   disabled={deleting}
                   onClick={() => { onDelete(product.id); onClose(); }}
-                  style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: 8, flex: 1 }}
+                  style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: 8, flex: 1 , height:"2rem" }}
                 />
-              </>
+              </Box>
             )}
           </Box>
         </Box>
