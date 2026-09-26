@@ -34,18 +34,13 @@ export async function loginUser(
       }).toString(),
     });
 
-    console.log('API Response Status:', response.status);
-
     const data = await response.json();
-    console.log('API Raw Response:', data);
-    
     // Add status code to response for easy access
     const result = {
       ...data,
       statusCode: response.status,
     };
-    
-    console.log('Final result with statusCode:', result);
+
     return result;
   } catch (error) {
     console.error('Error during login:', error);
@@ -104,7 +99,6 @@ export async function registerSeller(
     }
 
     const data = await response.json();
-    console.log('Registration response:', data);
     return data;
   } catch (error) {
     console.error('Error registering seller:', error);
@@ -213,15 +207,11 @@ export async function getProductsByEmail(userEmail: string): Promise<Product[]> 
     }
 
     const apiResponse = await response.json();
-    console.log('✅ API Response:', apiResponse);
 
     // Extract data array from response
     if (!apiResponse.data || !Array.isArray(apiResponse.data)) {
-      console.warn('⚠️ No data array in response');
       return [];
     }
-
-    console.log(`📦 Found ${apiResponse.data.length} products`);
 
     // Transform API response to Product interface
     const products: Product[] = apiResponse.data.map((item: any, index: number) => {
@@ -237,11 +227,9 @@ export async function getProductsByEmail(userEmail: string): Promise<Product[]> 
         seller: item.seller_email?.toString() || 'Unknown Seller',
         sellerApiKey: item.user_key?.toString() || item.seller_email?.toString() || '',
       };
-      console.log(`✅ Transformed product ${index}:`, product);
       return product;
     });
 
-    console.log('🎉 All products transformed:', products);
     return products;
   } catch (error) {
     console.error('Error fetching products by email:', error);
@@ -325,7 +313,6 @@ export async function insertProduct(
     }
 
     const data = await response.json();
-    console.log('Product creation response:', data);
     return data;
   } catch (error) {
     console.error('Error inserting product:', error);
@@ -392,10 +379,9 @@ export async function deleteProduct(
     }
 
     const data = await response.json();
-    console.log('✅ Product deletion response:', data);
     return data;
   } catch (error) {
-    console.error('❌ Error deleting product:', error);
+    console.error('Error deleting product:', error);
     throw error;
   }
 }
@@ -462,10 +448,9 @@ export async function editProductApi(
     }
 
     const data = await response.json();
-    console.log('✅ Product edit response:', data);
     return data;
   } catch (error) {
-    console.error('❌ Error editing product:', error);
+    console.error('Error editing product:', error);
     throw error;
   }
 }
@@ -500,10 +485,9 @@ export async function deleteProductApi(
     }
 
     const data = await response.json();
-    console.log('✅ Product delete API response:', data);
     return data;
   } catch (error) {
-    console.error('❌ Error deleting product via API:', error);
+    console.error('Error deleting product via API:', error);
     throw error;
   }
 }
@@ -535,10 +519,9 @@ export async function sendSellerKeyByEmail(
     }
 
     const data = await response.json();
-    console.log('✅ Seller key email sent:', data);
     return data;
   } catch (error) {
-    console.error('❌ Error sending seller key by email:', error);
+    console.error('Error sending seller key by email:', error);
     throw error;
   }
 }
