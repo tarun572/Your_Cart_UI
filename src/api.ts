@@ -113,6 +113,66 @@ export async function registerSeller(
 }
 
 /**
+ * Send Buyer OTP API - Requests a 4 digit email verification code for a
+ * buyer email address. Follows the same pattern as the seller user_key
+ * generation flow, but the code is emailed instead of shown on screen.
+ * @param userEmail - The buyer's email address
+ * @param userName - Optional display name to use for a first-time signup
+ * @returns Response with send status
+ */
+export async function sendBuyerOtp(
+  userEmail: string,
+  userName?: string
+): Promise<{ status: string; message: string; data: any[] }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/send-otp-api`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        user_email: userEmail,
+        ...(userName ? { user_name: userName } : {}),
+      }).toString(),
+    });
+
+    const data = await response.json();
+    return { ...data, statusCode: response.status } as any;
+  } catch (error) {
+    console.error('Error sending OTP:', error);
+    throw error;
+  }
+}
+
+/**
+ * Verify Buyer OTP API - Confirms the 4 digit code sent to a buyer email,
+ * flips is_verified to true on the User document, and returns a login
+ * token exactly like a successful /login-api call.
+ * @param userEmail - The buyer's email address
+ * @param otp - The 4 digit code entered by the user
+ * @returns Login-shaped result with token and user data
+ */
+export async function verifyBuyerOtp(
+  userEmail: string,
+  otp: string
+): Promise<{ status: string; message: string; data: any[]; statusCode?: number }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/verify-otp-api`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        user_email: userEmail,
+        otp,
+      }).toString(),
+    });
+
+    const data = await response.json();
+    return { ...data, statusCode: response.status };
+  } catch (error) {
+    console.error('Error verifying OTP:', error);
+    throw error;
+  }
+}
+
+/**
  * Get All Products API
  * @returns Array of all products
  */

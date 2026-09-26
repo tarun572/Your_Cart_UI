@@ -3,14 +3,11 @@ export interface Product {
   name: string;
   price: number;
   category: string;
-  /** base64 data URL (local upload) or https URL */
   image: string;
-  /** Array of image URLs for product gallery */
   images?: string[];
   desc: string;
   stock: number;
   seller: string;
-  /** The API key of the seller who owns this product */
   sellerApiKey: string;
 }
 
@@ -24,6 +21,7 @@ export interface User {
   name: string;
   role: 'seller' | 'buyer';
   apiKey?: string;
+  isVerified?: boolean;
 }
 
 export interface ApiKeyResult {
