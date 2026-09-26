@@ -58,7 +58,7 @@ function ProductDetailLayer({
   const currentImage = allImages[selectedImageIndex] || PLACEHOLDER;
   return (
     <Layer onEsc={onClose} onClickOutside={onClose} modal position="center" animation="fadeIn" style={{    top: "55%" ,width: "70%" , background:"none"}}>
-      <Box round="small" overflow="hidden" elevation="large" style={{ height: '35rem', overflowY: 'auto' , background:"white"}}>
+      <Box round="small" overflow="hidden" elevation="large" style={{ height: '35rem', overflowY: 'auto' , background:"white", paddingBottom:"2rem"}}>
         {/* Image gallery header */}
         <Box background="light-2" style={{ position: 'relative', height:"100%" }}>
           <Image
@@ -219,7 +219,7 @@ function ProductDetailLayer({
                 icon={<Cart size="small" />}
                 label="Add to Cart"
                 onClick={() => { onAddToCart(product.id); onClose(); }}
-                style={{ background: '#4f46e5', border: 'none', borderRadius: 8, flex: 1 }}
+                style={{ background: '#4f46e5', border: 'none', borderRadius: 8, flex: 1  , height:"3rem"}}
                 disabled={product.stock === 0}
               />
             )}
